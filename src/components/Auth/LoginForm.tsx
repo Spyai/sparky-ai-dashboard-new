@@ -1,21 +1,27 @@
 import React, { useState } from 'react';
-import { Phone, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { signInWithOTP, verifyOTP } from '../../lib/supabase';
+import Logo from '../../assets/Logo.jpg';
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 const LoginForm: React.FC = () => {
-  const [phone, setPhone] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  console.log("Phone Number:", phoneNumber); // Debugging line
+
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
+    const fullPhone = `+${phoneNumber}`;
     try {
-      const { error } = await signInWithOTP(phone);
+      const { error } = await signInWithOTP(fullPhone);
+      console.log(fullPhone)
       if (error) throw error;
       setStep('otp');
     } catch (err: any) {
@@ -24,14 +30,15 @@ const LoginForm: React.FC = () => {
       setLoading(false);
     }
   };
+  
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
+    const fullPhone = `+${phoneNumber}`;
     try {
-      const { error } = await verifyOTP(phone, otp);
+      const { error } = await verifyOTP(fullPhone, otp);
       if (error) throw error;
       // Navigation will be handled by the auth context
     } catch (err: any) {
@@ -46,8 +53,9 @@ const LoginForm: React.FC = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-xl">S</span>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center">
+              {/* <span className="text-white font-bold text-xl">S</span> */}
+              <img src={Logo} alt="Sparky AI Logo" className="w-8 h-8" />
             </div>
             <h1 className="text-3xl font-bold text-white">Sparky AI</h1>
           </div>
@@ -61,16 +69,23 @@ const LoginForm: React.FC = () => {
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
                   Phone Number
                 </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-5 h-5" />
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1234567890"
-                    className="w-full pl-10 pr-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    required
-                  />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <PhoneInput
+                      country={'in'}
+                      value={phoneNumber}
+                      onChange={phone => setPhoneNumber(phone)}
+                      placeholder="1234567890"
+                      inputClass="!w-full !h-12 !pr-4 !py-3 !bg-zinc-800 !border !border-zinc-700 
+                                  !rounded-lg !text-white !placeholder-zinc-500 
+                                  focus:!outline-none focus:!ring-2 focus:!ring-green-500 
+                                  focus:!border-transparent"
+                      buttonClass="!bg-zinc-800 !border-zinc-700 !rounded-l-lg hover:!bg-zinc-700 focus:!bg-zinc-700"
+                      containerClass="!w-full"
+                      dropdownClass="custom-dropdown"
+                      searchClass="!bg-zinc-800 !text-white !rounded-md focus:!ring-2 focus:!ring-green-500"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -93,7 +108,7 @@ const LoginForm: React.FC = () => {
             <form onSubmit={handleVerifyOTP} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  Enter OTP sent to {phone}
+                  Enter OTP sent to  +{phoneNumber}
                 </label>
                 <input
                   type="text"
