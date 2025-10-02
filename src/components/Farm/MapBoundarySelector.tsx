@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
-import { MapPin, Trash2 } from 'lucide-react';
+import { MapPin, Trash2, LocateFixed } from 'lucide-react';
 
 const MAP_API_KEY = import.meta.env.VITE_MAP_API_KEY;
 
@@ -14,9 +14,11 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
   initialCoordinates = []
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [drawingManager, setDrawingManager] = useState<google.maps.drawing.DrawingManager | null>(null);
   const [currentPolygon, setCurrentPolygon] = useState<google.maps.Polygon | null>(null);
+  const [searchMarker, setSearchMarker] = useState<google.maps.Marker | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
@@ -26,7 +28,7 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
         const loader = new Loader({
           apiKey: MAP_API_KEY,
           version: 'weekly',
-          libraries: ['drawing', 'geometry']
+          libraries: ['drawing', 'geometry', 'places'], // ✅ Added "places"
         });
 
         await loader.load();
@@ -35,10 +37,10 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
 
         // Initialize map
         const mapInstance = new google.maps.Map(mapRef.current, {
-          center: { lat: 40.7128, lng: -74.0060 }, // Default to New York
+          center: { lat: 40.7128, lng: -74.0060 },
           zoom: 15,
           mapTypeId: google.maps.MapTypeId.SATELLITE,
-          mapTypeControl: true,
+          // mapTypeControl: true,
           streetViewControl: false,
           fullscreenControl: true,
           zoomControl: true,
@@ -81,57 +83,45 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
             setCurrentPolygon(polygon);
             drawingManagerInstance.setDrawingMode(null);
 
-            // Extract coordinates
+            updateCoordinates(polygon);
+
             const path = polygon.getPath();
-            const coordinates: number[][] = [];
-            
-            for (let i = 0; i < path.getLength(); i++) {
-              const point = path.getAt(i);
-              coordinates.push([point.lng(), point.lat()]);
-            }
-            
-            // Close the polygon by adding the first point at the end
-            if (coordinates.length > 0) {
-              coordinates.push(coordinates[0]);
-            }
-
-            onBoundaryChange(coordinates);
-
-            // Add listeners for path changes
-            google.maps.event.addListener(path, 'set_at', () => {
-              updateCoordinates(polygon);
-            });
-
-            google.maps.event.addListener(path, 'insert_at', () => {
-              updateCoordinates(polygon);
-            });
-
-            google.maps.event.addListener(path, 'remove_at', () => {
-              updateCoordinates(polygon);
-            });
+            google.maps.event.addListener(path, 'set_at', () => updateCoordinates(polygon));
+            google.maps.event.addListener(path, 'insert_at', () => updateCoordinates(polygon));
+            google.maps.event.addListener(path, 'remove_at', () => updateCoordinates(polygon));
           }
         );
 
-        // Load initial coordinates if provided
+        // Load initial polygon
         if (initialCoordinates.length > 0) {
           loadInitialPolygon(mapInstance, initialCoordinates);
         }
 
-        // Try to get user's location
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              const userLocation = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-              };
-              mapInstance.setCenter(userLocation);
-              mapInstance.setZoom(16);
-            },
-            (error) => {
-              console.log('Geolocation error:', error);
+        // ✅ Setup search bar
+        if (searchInputRef.current) {
+          const autocomplete = new google.maps.places.Autocomplete(searchInputRef.current, {
+            fields: ['geometry', 'name'],
+            types: ['geocode'],
+          });
+
+          autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (!place.geometry || !place.geometry.location) return;
+
+            mapInstance.setCenter(place.geometry.location);
+            mapInstance.setZoom(16);
+
+            // Place or move marker
+            if (searchMarker) {
+              searchMarker.setPosition(place.geometry.location);
+            } else {
+              const marker = new google.maps.Marker({
+                position: place.geometry.location,
+                map: mapInstance,
+              });
+              setSearchMarker(marker);
             }
-          );
+          });
         }
 
         setIsLoading(false);
@@ -145,15 +135,16 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
     initializeMap();
   }, []);
 
+  // ✅ Helper to update polygon coordinates
   const updateCoordinates = (polygon: google.maps.Polygon) => {
     const path = polygon.getPath();
     const coordinates: number[][] = [];
-    
+
     for (let i = 0; i < path.getLength(); i++) {
       const point = path.getAt(i);
       coordinates.push([point.lng(), point.lat()]);
     }
-    
+
     if (coordinates.length > 0) {
       coordinates.push(coordinates[0]);
     }
@@ -161,6 +152,7 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
     onBoundaryChange(coordinates);
   };
 
+  // ✅ Load polygon from initial coordinates
   const loadInitialPolygon = (mapInstance: google.maps.Map, coordinates: number[][]) => {
     if (coordinates.length < 3) return;
 
@@ -203,6 +195,37 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
     }
   };
 
+  // ✅ Handle current location button
+  const goToCurrentLocation = () => {
+    if (map && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+
+          map.setCenter(userLocation);
+          map.setZoom(16);
+
+          if (searchMarker) {
+            searchMarker.setPosition(userLocation);
+          } else {
+            const marker = new google.maps.Marker({
+              position: userLocation,
+              map,
+            });
+            setSearchMarker(marker);
+          }
+        },
+        (error) => {
+          console.log('Geolocation error:', error);
+          alert('Unable to fetch current location. Please enable GPS.');
+        }
+      );
+    }
+  };
+
   if (error) {
     return (
       <div className="flex items-center justify-center border rounded-lg aspect-video bg-zinc-800 border-zinc-700">
@@ -217,30 +240,50 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-medium text-white">Farm Boundary</h3>
-        <div className="flex gap-2">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-col sm:flex-row gap-2">
+        {/* 🔎 Search bar */}
+        <input
+          ref={searchInputRef}
+          type="text"
+          placeholder="Search location..."
+          className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        />
+
+        {/* 📍 Current Location button */}
+        <button
+          type="button"
+          onClick={goToCurrentLocation}
+          className="flex items-center gap-1 px-2 py-2 text-sm text-white transition-colors bg-violet-500 rounded-lg hover:bg-violet-600"
+        >
+          <LocateFixed className="w-4 h-4" />
+          Current Location
+        </button>
+
+        {/* ✏️ Draw polygon */}
+        <button
+          type="button"
+          onClick={startDrawing}
+          className="flex items-center gap-1 px-2 py-2 text-sm text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600"
+        >
+          <MapPin className="w-4 h-4" />
+          Draw Boundary
+        </button>
+
+        {/* 🗑️ Clear polygon */}
+        {currentPolygon && (
           <button
             type="button"
-            onClick={startDrawing}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600"
+            onClick={clearPolygon}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-white transition-colors bg-red-500 rounded-lg hover:bg-red-600"
           >
-            <MapPin className="w-4 h-4" />
-            Draw Boundary
+            <Trash2 className="w-4 h-4" />
+            Clear
           </button>
-          {currentPolygon && (
-            <button
-              type="button"
-              onClick={clearPolygon}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-white transition-colors bg-red-500 rounded-lg hover:bg-red-600"
-            >
-              <Trash2 className="w-4 h-4" />
-              Clear
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
+      {/* Map */}
       <div className="relative">
         <div
           ref={mapRef}
@@ -258,7 +301,9 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
         )}
       </div>
 
+      {/* Instructions */}
       <div className="space-y-1 text-sm text-zinc-400">
+        <p>• Search for a location or click "Current Location" to jump to your position</p>
         <p>• Click "Draw Boundary" to start drawing your farm boundary</p>
         <p>• Click on the map to add points, double-click to finish</p>
         <p>• Drag points to adjust the boundary after drawing</p>
