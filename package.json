@@ -18,11 +18,13 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-is": "^18.3.1",
+    "react-phone-input-2": "^2.15.1",
     "react-router-dom": "^7.6.3",
     "recharts": "^3.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@types/google.maps": "^3.58.1",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",

@@ -175,12 +175,21 @@ const FarmSetup: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
               </div>
             </div>
 
-            <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-4">
-              <MapBoundarySelector
-                onBoundaryChange={setCoordinates}
-                initialCoordinates={coordinates}
-              />
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                Define Farm Boundary
+              </label>
+              {/* <p className="text-xs text-zinc-500">
+                Use the map below to draw the boundary of your farm. Click to add points and close the polygon by clicking the first point again.
+              </p> */}
+              <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-4">
+                <MapBoundarySelector
+                  onBoundaryChange={setCoordinates}
+                  initialCoordinates={coordinates}
+                />
+              </div>
             </div>
+
 
             {coordinates.length > 0 && (
               <div className="p-3 bg-green-900/20 border border-green-800 rounded-lg">

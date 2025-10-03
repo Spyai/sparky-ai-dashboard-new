@@ -28,7 +28,7 @@ import FarmMap from '../components/Dashboard/FarmMap';
 import WeatherForecast from '../components/Dashboard/WeatherForecast';
 import CropHealthMonitor from '../components/Dashboard/CropHealthMonitor';
 import AdvancedFieldAnalytics from '../components/Dashboard/AdvancedFieldAnalytics';
-import AIInsightsPanel from '../components/Dashboard/AIInsightsPanel';
+// import AIInsightsPanel from '../components/Dashboard/AIInsightsPanel';
 import ColorizationMap from '../components/Dashboard/ColorizationMap';
 
 const Dashboard: React.FC = () => {
@@ -358,11 +358,11 @@ const Dashboard: React.FC = () => {
                 </div>
                 
                 <div className="xl:col-span-2">
-                  <AIInsightsPanel 
+                  {/* <AIInsightsPanel 
                     farmData={selectedFarm}
                     weatherData={weatherData}
                     cropHealthData={farmerData}
-                  />
+                  /> */}
                 </div>
               </div>
             ) : (
