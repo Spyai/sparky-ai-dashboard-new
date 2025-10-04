@@ -794,9 +794,9 @@ const Reports: React.FC = () => {
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 p-4 overflow-y-auto sm:p-6">
           <div className="mx-auto space-y-4 sm:space-y-6 max-w-7xl">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <h1 className="text-2xl font-bold text-white sm:text-3xl">{t('title')}</h1>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex gap-4 flex-row items-center justify-between">
+              <h1 className="text-2xl font-bold text-white sm:text-3xl">{t('Reports')}</h1>
+              <div className="flex gap-2 sm:flex-row sm:items-center sm:gap-4">
                 <FarmSelector
                   farms={farms}
                   selectedFarm={selectedFarm}
@@ -833,7 +833,7 @@ const Reports: React.FC = () => {
                       <>
                         <Download className="w-4 h-4" />
                         <span className="hidden sm:inline">{t('download')}</span>
-                        <span className="sm:hidden">DL</span>
+                        {/* <span className="sm:hidden">DL</span> */}
                       </>
                     )}
                   </button>

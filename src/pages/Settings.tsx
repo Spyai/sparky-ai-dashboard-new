@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, User, Globe, Bell, Shield, Info, Save, Phone, Mail, BarChart3 } from 'lucide-react';
+import { User, Globe, Bell, Shield, Info, Save, Phone, Mail, BarChart3 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import Sidebar from '../components/Layout/Sidebar';
@@ -370,12 +370,12 @@ const Settings: React.FC = () => {
   return (
     <div className="min-h-screen bg-zinc-950 flex">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col w-full min-w-0">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="max-w-4xl mx-auto space-y-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold text-white">{t('title')}</h1>
+              <h1 className="text-3xl font-bold text-white">{t('Settings')}</h1>
               {(activeTab === 'profile' || activeTab === 'notifications') && (
                 <button
                   onClick={saveSettings}
