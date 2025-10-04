@@ -14,6 +14,7 @@ const Scheduler: React.FC = () => {
   const { t } = useLanguage();
   const [farms, setFarms] = useState<Farm[]>([]);
   const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,13 +53,13 @@ const Scheduler: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-zinc-950">
-      <Sidebar />
-      <div className="flex flex-col flex-1">
-        <Header />
-        <main className="flex-1 p-6 overflow-y-auto">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="flex flex-col flex-1 w-full min-w-0">
+        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
           <div className="mx-auto space-y-6 max-w-7xl">
-            <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold text-white">{t('title')}</h1>
+            <div className="flex gap-4 flex-row items-center justify-between">
+              <h1 className="text-2xl lg:text-3xl font-bold text-white">{t('Scheduler')}</h1>
               <FarmSelector
                 farms={farms}
                 selectedFarm={selectedFarm}

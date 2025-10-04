@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, Edit, Trash2, Clock, AlertCircle, CheckCircle, Filter } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, Clock, CheckCircle } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface Activity {
@@ -208,239 +208,265 @@ const ActivityScheduler: React.FC<ActivitySchedulerProps> = ({ farmId }) => {
   const filteredActivities = getFilteredActivities();
 
   return (
-    <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-500/20 rounded-lg">
-            <Calendar className="w-5 h-5 text-blue-400" />
-          </div>
-          <div>
-            <h3 className="text-xl font-semibold text-white">{t('title')}</h3>
-            <p className="text-zinc-400 text-sm">
-              {filteredActivities.length} activities
-            </p>
-          </div>
+   <div className="bg-zinc-900 rounded-xl p-4 sm:p-6 border border-zinc-800">
+    {/* Header */}
+    <div className="flex flex-row items-center justify-between gap-4 mb-6">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-blue-500/20 rounded-lg">
+          <Calendar className="w-5 h-5 text-blue-400" />
         </div>
+        <div>
+          <h3 className="text-lg sm:text-xl font-semibold text-white">{t('Scheduler')}</h3>
+          <p className="text-zinc-400 text-sm">
+            {filteredActivities.length} activities
+          </p>
+        </div>
+      </div>
+      <button
+        onClick={() => setShowModal(true)}
+        className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm sm:text-base"
+      >
+        <Plus className="w-4 h-4" />
+        {t('Add Activity')}
+      </button>
+    </div>
+
+    {/* Filter Tabs */}
+    <div className="flex flex-wrap gap-2 mb-6">
+      {[
+        { key: 'all', label: 'All' },
+        { key: 'today', label: t('Today') },
+        { key: 'upcoming', label: t('Upcoming') },
+        { key: 'completed', label: t('Completed') },
+      ].map(({ key, label }) => (
         <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+          key={key}
+          onClick={() => setFilter(key as any)}
+          className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            filter === key
+              ? 'bg-blue-500 text-white'
+              : 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700'
+          }`}
         >
-          <Plus className="w-4 h-4" />
-          {t('addActivity')}
+          {label}
         </button>
-      </div>
+      ))}
+    </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 mb-6">
-        {[
-          { key: 'all', label: 'All' },
-          { key: 'today', label: t('today') },
-          { key: 'upcoming', label: t('upcoming') },
-          { key: 'completed', label: t('completed') },
-        ].map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setFilter(key as any)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === key
-                ? 'bg-blue-500 text-white'
-                : 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700'
-            }`}
+    {/* Activities List */}
+    <div className="space-y-4">
+      {filteredActivities.length === 0 ? (
+        <div className="text-center py-12">
+          <Calendar className="w-12 h-12 text-zinc-500 mx-auto mb-4" />
+          <p className="text-zinc-400 mb-2">No activities found</p>
+          <p className="text-zinc-500 text-sm">
+            Add your first activity to get started
+          </p>
+        </div>
+      ) : (
+        filteredActivities.map((activity) => (
+          <div
+            key={activity.id}
+            className="bg-zinc-800 rounded-lg p-4 border border-zinc-700"
           >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Activities List */}
-      <div className="space-y-4">
-        {filteredActivities.length === 0 ? (
-          <div className="text-center py-12">
-            <Calendar className="w-12 h-12 text-zinc-500 mx-auto mb-4" />
-            <p className="text-zinc-400 mb-2">No activities found</p>
-            <p className="text-zinc-500 text-sm">Add your first activity to get started</p>
-          </div>
-        ) : (
-          filteredActivities.map((activity) => (
-            <div
-              key={activity.id}
-              className="bg-zinc-800 rounded-lg p-4 border border-zinc-700"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="text-2xl">{getActivityTypeIcon(activity.type)}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div className="flex items-start gap-1 flex-1">
+                <div className="text-2xl">{getActivityTypeIcon(activity.type)}</div>
+                <div className="flex-1">
+                  <div className="flex justify-between items-center sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
+                    <div className="flex flex-wrap items-center gap-4">
                       <h4 className="text-white font-medium">{activity.name}</h4>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(activity.priority)}`}>
-                        {activity.priority}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(activity.status)}`}>
-                        {activity.status}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-zinc-400 mb-2">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {new Date(activity.date).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {activity.time}
-                      </div>
-                      <div className="capitalize">
-                        {activity.type.replace('-', ' ')}
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(
+                            activity.priority
+                          )}`}
+                        >
+                          {activity.priority}
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            activity.status
+                          )}`}
+                        >
+                          {activity.status}
+                        </span>
                       </div>
                     </div>
-                    {activity.description && (
-                      <p className="text-zinc-300 text-sm">{activity.description}</p>
-                    )}
+                    <div className="flex items-center gap-1 justify-end">
+                      {activity.status === 'pending' && (
+                        <button
+                          onClick={() => handleStatusChange(activity.id, 'completed')}
+                          className="px-1 py-0.5 text-green-400 hover:bg-green-900/20 rounded-lg transition-colors"
+                          title="Mark as completed"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleEdit(activity)}
+                        className="px-1 py-0.5 text-blue-400 hover:bg-blue-900/20 rounded-lg transition-colors"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(activity.id)}
+                        className="px-1 py-0.5 text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {activity.status === 'pending' && (
-                    <button
-                      onClick={() => handleStatusChange(activity.id, 'completed')}
-                      className="p-2 text-green-400 hover:bg-green-900/20 rounded-lg transition-colors"
-                      title="Mark as completed"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                    </button>
+
+                  <div className="flex flex-wrap gap-4 text-sm text-zinc-400 mb-2">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(activity.date).toLocaleDateString()}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      {activity.time}
+                    </div>
+                    <div className="capitalize">{activity.type.replace('-', ' ')}</div>
+                  </div>
+
+                  {activity.description && (
+                    <p className="text-zinc-300 text-sm">{activity.description}</p>
                   )}
-                  <button
-                    onClick={() => handleEdit(activity)}
-                    className="p-2 text-blue-400 hover:bg-blue-900/20 rounded-lg transition-colors"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(activity.id)}
-                    className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          </div>
+        ))
+      )}
+    </div>
 
-      {/* Activity Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-zinc-900 rounded-xl p-6 w-full max-w-md border border-zinc-800">
-            <h3 className="text-xl font-semibold text-white mb-4">
-              {editingActivity ? t('editActivity') : t('addActivity')}
-            </h3>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
+    {/* Activity Modal */}
+    {showModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+        <div className="bg-zinc-900 rounded-xl p-6 w-full max-w-md border border-zinc-800">
+          <h3 className="text-lg sm:text-xl font-semibold text-white mb-4">
+            {editingActivity ? t('editActivity') : t('addActivity')}
+          </h3>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                {t('activityName')}
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            {/* Type */}
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                {t('activityType')}
+              </label>
+              <select
+                value={formData.type}
+                onChange={(e) =>
+                  setFormData({ ...formData, type: e.target.value as Activity['type'] })
+                }
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="irrigation">Irrigation</option>
+                <option value="fertilization">Fertilization</option>
+                <option value="pesticide">Pesticide</option>
+                <option value="harvesting">Harvesting</option>
+                <option value="planting">Planting</option>
+                <option value="weeding">Weeding</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            {/* Date + Time */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t('activityName')}
+                  {t('date')}
                 </label>
                 <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t('activityType')}
+                  {t('time')}
                 </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as Activity['type'] })}
+                <input
+                  type="time"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                   className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="irrigation">Irrigation</option>
-                  <option value="fertilization">Fertilization</option>
-                  <option value="pesticide">Pesticide</option>
-                  <option value="harvesting">Harvesting</option>
-                  <option value="planting">Planting</option>
-                  <option value="weeding">Weeding</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    {t('date')}
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    {t('time')}
-                  </label>
-                  <input
-                    type="time"
-                    value={formData.time}
-                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t('priority')}
-                </label>
-                <select
-                  value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value as Activity['priority'] })}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t('description')}
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 />
               </div>
+            </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors"
-                >
-                  {t('save')}
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-4 rounded-lg transition-colors"
-                >
-                  {t('cancel')}
-                </button>
-              </div>
-            </form>
-          </div>
+            {/* Priority */}
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                {t('priority')}
+              </label>
+              <select
+                value={formData.priority}
+                onChange={(e) =>
+                  setFormData({ ...formData, priority: e.target.value as Activity['priority'] })
+                }
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                {t('description')}
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <button
+                type="submit"
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors"
+              >
+                {t('save')}
+              </button>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-4 rounded-lg transition-colors"
+              >
+                {t('cancel')}
+              </button>
+            </div>
+          </form>
         </div>
-      )}
-    </div>
+      </div>
+    )}
+  </div>
+
   );
 };
 
