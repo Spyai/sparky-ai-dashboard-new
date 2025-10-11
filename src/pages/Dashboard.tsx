@@ -196,7 +196,7 @@ const Dashboard: React.FC = () => {
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
           <div className="mx-auto space-y-6 max-w-7xl">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-4 flex-row items-center justify-between">
               <h1 className="text-2xl lg:text-3xl font-bold text-white">Farm Dashboard</h1>
               <FarmSelector
                 farms={farms}

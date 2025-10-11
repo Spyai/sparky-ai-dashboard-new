@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { signInWithOTP, verifyOTP } from '../../lib/supabase';
-import Logo from '../../assets/Logo.jpg';
+import Logo from '../../assets/logo.png';
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 
@@ -11,8 +11,6 @@ const LoginForm: React.FC = () => {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  console.log("Phone Number:", phoneNumber); // Debugging line
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
