@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
-import { Bell, User, ChevronDown, Menu } from 'lucide-react';
+import React, { useState,  } from 'react';
+import { Bell, User, Menu } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useLanguage();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [openUserMenu, setOpenUserMenu] = useState(false);
 
   return (
     <header className="flex items-center justify-between w-full h-16 px-4 border-b bg-zinc-900 border-zinc-800 sm:px-6">
@@ -59,12 +63,34 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         </div>
 
         {/* User Profile */}
-        <div className="flex items-center min-w-0 gap-2 sm:gap-3 text-zinc-400">
-          <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full bg-zinc-700">
-            <User className="w-4 h-4" />
-          </div>
-          <span className="hidden text-sm font-medium truncate sm:block">{user?.phone || 'User'}</span>
-          <ChevronDown className="flex-shrink-0 hidden w-4 h-4 sm:block" />
+        <div className="relative min-w-0 gap-2 sm:gap-3 text-zinc-400">
+          <button 
+            onClick={() => setOpenUserMenu(!openUserMenu)} 
+            className="flex items-center justify-center w-full h-full rounded-full hover:bg-zinc-600"
+            >
+            <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full bg-zinc-700">
+              <User className="w-4 h-4" />
+            </div>
+            {/* <span className="hidden pl-2 text-sm font-medium truncate sm:block">{user?.phone || 'User'}</span> */}
+          </button>
+
+          {openUserMenu && (
+            <div className="absolute right-0 mt-2 w-40 bg-zinc-800 flex flex-col rounded-lg shadow-lg border border-zinc-700 z-50 max-w-[calc(100vw-2rem)]">
+              <button 
+                onClick={() => navigate('/settings')}
+                className="border-b border-zinc-700"
+              >
+                <div className="p-3 border-b border-zinc-700 flex items-center justify-center">
+                  <h3 className="font-medium text-white">Profile</h3>
+                </div>
+              </button>
+              <button onClick={signOut}>
+                <div className="p-3 border-b border-zinc-700 flex items-center justify-center">
+                  <h3 className="font-medium text-white">Logout</h3>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
