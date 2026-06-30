@@ -16,8 +16,16 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [drawingManager, setDrawingManager] = useState<google.maps.drawing.DrawingManager | null>(null);
+  const [drawingMode, setDrawingMode] = useState<boolean>(false);
+  const tempPathRef = useRef<google.maps.LatLngLiteral[]>([]);
+  const tempPolylineRef = useRef<google.maps.Polyline | null>(null);
+  const drawingModeRef = useRef<boolean>(drawingMode);
+  const currentPolygonRef = useRef<google.maps.Polygon | null>(null);
+  const mapClickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
+  const mapDblClickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
   const [currentPolygon, setCurrentPolygon] = useState<google.maps.Polygon | null>(null);
+  useEffect(() => { drawingModeRef.current = drawingMode; }, [drawingMode]);
+  useEffect(() => { currentPolygonRef.current = currentPolygon; }, [currentPolygon]);
   const [searchMarker, setSearchMarker] = useState<google.maps.Marker | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -28,7 +36,7 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
         const loader = new Loader({
           apiKey: MAP_API_KEY,
           version: 'weekly',
-          libraries: ['drawing', 'geometry', 'places'], // ✅ Added "places"
+          libraries: ['geometry', 'places'], // removed 'drawing' (deprecated)
         });
 
         await loader.load();
@@ -40,6 +48,7 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
           center: { lat: 40.7128, lng: -74.0060 },
           zoom: 15,
           mapTypeId: google.maps.MapTypeId.SATELLITE,
+          disableDoubleClickZoom: true,
           // mapTypeControl: true,
           streetViewControl: false,
           fullscreenControl: true,
@@ -48,15 +57,14 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
 
         setMap(mapInstance);
 
-        // Initialize drawing manager
-        const drawingManagerInstance = new google.maps.drawing.DrawingManager({
-          drawingMode: null,
-          drawingControl: true,
-          drawingControlOptions: {
-            position: google.maps.ControlPosition.TOP_CENTER,
-            drawingModes: [google.maps.drawing.OverlayType.POLYGON],
-          },
-          polygonOptions: {
+        // Custom drawing handlers (DrawingManager deprecated in v3.65)
+        // We'll handle click to add points and dblclick to finish a polygon.
+        // Helper to finish polygon from temp path
+        const finishTempPolygon = () => {
+          if (tempPathRef.current.length < 3) return;
+
+          const polygon = new google.maps.Polygon({
+            paths: tempPathRef.current,
             fillColor: '#22c55e',
             fillOpacity: 0.3,
             strokeWeight: 2,
@@ -64,33 +72,111 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
             clickable: true,
             editable: true,
             zIndex: 1,
-          },
+            map: mapInstance,
+          });
+
+          if (currentPolygonRef.current) {
+            currentPolygonRef.current.setMap(null);
+          }
+
+          if (tempPolylineRef.current) {
+            tempPolylineRef.current.setMap(null);
+            tempPolylineRef.current = null;
+          }
+
+          setCurrentPolygon(polygon);
+          tempPathRef.current = [];
+          setDrawingMode(false);
+
+          updateCoordinates(polygon);
+          const path = polygon.getPath();
+          google.maps.event.addListener(path, 'set_at', () => updateCoordinates(polygon));
+          google.maps.event.addListener(path, 'insert_at', () => updateCoordinates(polygon));
+          google.maps.event.addListener(path, 'remove_at', () => updateCoordinates(polygon));
+        };
+
+        mapClickListenerRef.current = mapInstance.addListener('click', (e: google.maps.MapMouseEvent) => {
+          if (!drawingModeRef.current) return;
+          if (!e.latLng) return;
+
+          const clickedLatLng = new google.maps.LatLng(e.latLng.lat(), e.latLng.lng());
+
+          // If user clicks near the first point and we have >=3 points, finish polygon
+          if (tempPathRef.current.length >= 3) {
+            const first = tempPathRef.current[0];
+            const firstLatLng = new google.maps.LatLng(first.lat, first.lng);
+            const distance = google.maps.geometry.spherical.computeDistanceBetween(firstLatLng, clickedLatLng);
+            if (distance <= 10) { // within 10 meters
+              finishTempPolygon();
+              return;
+            }
+          }
+
+          const latLngLiteral = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+          tempPathRef.current.push(latLngLiteral);
+
+          if (!tempPolylineRef.current) {
+            tempPolylineRef.current = new google.maps.Polyline({
+              path: tempPathRef.current,
+              strokeColor: '#16a34a',
+              strokeOpacity: 1.0,
+              strokeWeight: 2,
+              map: mapInstance,
+              clickable: false,
+            });
+          } else {
+            tempPolylineRef.current.setPath(tempPathRef.current);
+          }
         });
 
-        drawingManagerInstance.setMap(mapInstance);
-        setDrawingManager(drawingManagerInstance);
-
-        // Handle polygon completion
-        google.maps.event.addListener(
-          drawingManagerInstance,
-          'polygoncomplete',
-          (polygon: google.maps.Polygon) => {
-            // Remove previous polygon if exists
-            if (currentPolygon) {
-              currentPolygon.setMap(null);
+        mapDblClickListenerRef.current = mapInstance.addListener('dblclick', (e: google.maps.MapMouseEvent) => {
+          if (!drawingModeRef.current) return;
+          // Need at least 3 points
+          if (tempPathRef.current.length < 3) {
+            tempPathRef.current = [];
+            if (tempPolylineRef.current) {
+              tempPolylineRef.current.setMap(null);
+              tempPolylineRef.current = null;
             }
-
-            setCurrentPolygon(polygon);
-            drawingManagerInstance.setDrawingMode(null);
-
-            updateCoordinates(polygon);
-
-            const path = polygon.getPath();
-            google.maps.event.addListener(path, 'set_at', () => updateCoordinates(polygon));
-            google.maps.event.addListener(path, 'insert_at', () => updateCoordinates(polygon));
-            google.maps.event.addListener(path, 'remove_at', () => updateCoordinates(polygon));
+            setDrawingMode(false);
+            return;
           }
-        );
+
+          // Create polygon from temp path
+          const polygon = new google.maps.Polygon({
+            paths: tempPathRef.current,
+            fillColor: '#22c55e',
+            fillOpacity: 0.3,
+            strokeWeight: 2,
+            strokeColor: '#16a34a',
+            clickable: true,
+            editable: true,
+            zIndex: 1,
+            map: mapInstance,
+          });
+
+          // Remove previous polygon
+          if (currentPolygonRef.current) {
+            currentPolygonRef.current.setMap(null);
+          }
+
+          // Cleanup temp polyline
+          if (tempPolylineRef.current) {
+            tempPolylineRef.current.setMap(null);
+            tempPolylineRef.current = null;
+          }
+
+          setCurrentPolygon(polygon);
+          tempPathRef.current = [];
+          setDrawingMode(false);
+
+          // Update coordinates and attach editing listeners
+          updateCoordinates(polygon);
+          const path = polygon.getPath();
+          google.maps.event.addListener(path, 'set_at', () => updateCoordinates(polygon));
+          google.maps.event.addListener(path, 'insert_at', () => updateCoordinates(polygon));
+          google.maps.event.addListener(path, 'remove_at', () => updateCoordinates(polygon));
+        });
 
         // Load initial polygon
         if (initialCoordinates.length > 0) {
@@ -133,6 +219,27 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
     };
 
     initializeMap();
+
+    return () => {
+      // remove any temp polyline
+      if (tempPolylineRef.current) {
+        tempPolylineRef.current.setMap(null);
+        tempPolylineRef.current = null;
+      }
+      // remove current polygon
+      if (currentPolygon) {
+        currentPolygon.setMap(null);
+      }
+      // remove listeners
+      if (mapClickListenerRef.current) {
+        mapClickListenerRef.current.remove();
+        mapClickListenerRef.current = null;
+      }
+      if (mapDblClickListenerRef.current) {
+        mapDblClickListenerRef.current.remove();
+        mapDblClickListenerRef.current = null;
+      }
+    };
   }, []);
 
   // ✅ Helper to update polygon coordinates
@@ -190,9 +297,14 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
   };
 
   const startDrawing = () => {
-    if (drawingManager) {
-      drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
+    // enable custom drawing mode
+    // clear any existing temp state
+    tempPathRef.current = [];
+    if (tempPolylineRef.current) {
+      tempPolylineRef.current.setMap(null);
+      tempPolylineRef.current = null;
     }
+    setDrawingMode(true);
   };
 
   // ✅ Handle current location button

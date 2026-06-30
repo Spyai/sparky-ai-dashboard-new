@@ -244,3 +244,38 @@ export const getFarmerData = async (fieldID: string): Promise<FarmerData> => {
     throw error;
   }
 };
+
+export interface FieldImageResponse {
+  url?: string;
+  error?: string;
+  message?: string;
+}
+
+export const getFieldImage = async (payload: {
+  FieldID: string;
+  ImageType: string;
+  SensedDay: string;
+  ColorMap: string;
+}): Promise<FieldImageResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/getFieldImage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_TOKEN}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(result?.error || result?.message || `Field image API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error fetching field image:', error);
+    throw error;
+  }
+};

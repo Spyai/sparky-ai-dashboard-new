@@ -10,7 +10,7 @@ import {
   Palette
 } from 'lucide-react';
 import { Farm } from '../../types';
-import { getFarmerData, FarmerData } from '../../lib/api';
+import { getFarmerData, getFieldImage, FarmerData } from '../../lib/api';
 
 interface ColorizationMapProps {
   farm: Farm | null;
@@ -98,34 +98,22 @@ const ColorizationMap: React.FC<ColorizationMapProps> = ({ farm, className = '' 
 
     setIsLoadingImage(true);
     try {
-      // Fetch satellite image from Farmonaut API
-      const response = await fetch(`https://us-central1-farmbase-b2f7e.cloudfunctions.net/getFieldImage`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer fn_live_1748264194699_PjyYUjTRbH6EKHxyWhKgJFt8m0dm2lhx`,
-        },
-        body: JSON.stringify({
-          FieldID: farm.field_id,
-          ImageType: selectedImageType,
-          SensedDay: selectedDate,
-          ColorMap: selectedColormap,
-        }),
+      const result = await getFieldImage({
+        FieldID: farm.field_id,
+        ImageType: selectedImageType,
+        SensedDay: selectedDate,
+        ColorMap: selectedColormap,
       });
 
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
       if (result.url) {
         setCurrentImageUrl(result.url);
         setError('');
+      } else {
+        throw new Error(result.error || result.message || 'The image service did not return a URL');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading satellite image:', err);
-      setError('Failed to load satellite image');
+      setError(err.message || 'Failed to load satellite image');
       setCurrentImageUrl(null);
     } finally {
       setIsLoadingImage(false);
