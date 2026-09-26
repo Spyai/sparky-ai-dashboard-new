@@ -1,8 +1,42 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
 import { MapPin, Trash2, LocateFixed } from 'lucide-react';
 
 const MAP_API_KEY = import.meta.env.VITE_MAP_API_KEY;
+const SCRIPT_ID = 'google-maps-api-script';
+
+/**
+ * Loads the Google Maps script exactly once, no matter how many times it's called.
+ * - If Maps is already on window → resolves immediately.
+ * - If the <script> tag is already injected (another mount is loading) → waits for it.
+ * - Otherwise → injects the script tag and waits.
+ */
+const loadGoogleMapsScript = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    // Already fully loaded
+    if (window.google?.maps) {
+      resolve();
+      return;
+    }
+
+    // Script tag already in DOM (loading in progress from another mount)
+    const existing = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener('load', () => resolve());
+      existing.addEventListener('error', () => reject(new Error('Google Maps script failed to load')));
+      return;
+    }
+
+    // First time — inject the script
+    const script = document.createElement('script');
+    script.id = SCRIPT_ID;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${MAP_API_KEY}&libraries=geometry,places&v=weekly`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Google Maps script failed to load'));
+    document.head.appendChild(script);
+  });
+};
 
 interface MapBoundarySelectorProps {
   onBoundaryChange: (coordinates: number[][]) => void;
@@ -33,13 +67,15 @@ const MapBoundarySelector: React.FC<MapBoundarySelectorProps> = ({
   useEffect(() => {
     const initializeMap = async () => {
       try {
-        const loader = new Loader({
-          apiKey: MAP_API_KEY,
-          version: 'weekly',
-          libraries: ['geometry', 'places'], // removed 'drawing' (deprecated)
-        });
+        await loadGoogleMapsScript();
 
-        await loader.load();
+        // The modern Maps API loads 'places' and 'geometry' as separate async
+        // modules. We must explicitly await them via importLibrary() to guarantee
+        // google.maps.places and google.maps.geometry are ready before use.
+        await Promise.all([
+          (google.maps as any).importLibrary('places'),
+          (google.maps as any).importLibrary('geometry'),
+        ]);
 
         if (!mapRef.current) return;
 
