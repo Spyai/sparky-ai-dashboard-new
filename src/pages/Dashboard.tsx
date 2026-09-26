@@ -18,6 +18,7 @@ import { Farm } from '../types';
 import Sidebar from '../components/Layout/Sidebar';
 import Header from '../components/Layout/Header';
 import FarmSelector from '../components/Dashboard/FarmSelector';
+import FarmSetup from '../components/Farm/FarmSetup';
 import FertilizerInfo from '../components/Dashboard/FertilizerInfo';
 import IrrigationCalendar from '../components/Dashboard/IrrigationCalendar';
 import YieldEstimation from '../components/Dashboard/YieldEstimation';
@@ -41,6 +42,7 @@ const Dashboard: React.FC = () => {
   const [farmerDataLoading, setFarmerDataLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showAddFarm, setShowAddFarm] = useState(false);
 
   // Real-time AI data states
   const [fertilizerData, setFertilizerData] = useState<FertilizerRecommendation | null>(null);
@@ -177,9 +179,26 @@ const Dashboard: React.FC = () => {
   }, [sidebarOpen]);
 
   const handleAddFarm = () => {
-    // Navigate to farm creation
-    window.location.href = '/farm-setup';
+    setShowAddFarm(true);
   };
+
+  const handleFarmAdded = useCallback(async () => {
+    setShowAddFarm(false);
+    // Re-fetch farms so the new farm appears in the list
+    if (!user?.phone) return;
+    try {
+      const { data, error } = await getUserFarms(user.phone);
+      if (error) throw error;
+      const updatedFarms = data || [];
+      setFarms(updatedFarms);
+      // Auto-select the newest farm (first in descending order)
+      if (updatedFarms.length > 0) {
+        setSelectedFarm(updatedFarms[0]);
+      }
+    } catch (error) {
+      console.error('Error refreshing farms after add:', error);
+    }
+  }, [user?.phone]);
 
   if (loading) {
     return (
@@ -190,6 +209,16 @@ const Dashboard: React.FC = () => {
   }
 
   return (
+    <>
+      {/* Add Farm Modal Overlay */}
+      {showAddFarm && (
+        <div className="fixed inset-0 z-50 bg-zinc-950/90 backdrop-blur-sm overflow-y-auto">
+          <FarmSetup
+            onComplete={handleFarmAdded}
+            onCancel={() => setShowAddFarm(false)}
+          />
+        </div>
+      )}
     <div className="flex min-h-screen bg-zinc-950">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex flex-col flex-1 lg:ml-0">
@@ -412,6 +441,7 @@ const Dashboard: React.FC = () => {
         />
       </div>
     </div>
+    </>
   );
 };
 
