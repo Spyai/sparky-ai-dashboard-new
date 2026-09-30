@@ -69,17 +69,35 @@ const ColorizationMap: React.FC<ColorizationMapProps> = ({ farm, className = '' 
   useEffect(() => {
     if (!farm?.field_id) return;
 
+    // Reset stale state from the previous farm immediately
+    setSelectedDate('');
+    setAvailableDates([]);
+    setCurrentImageUrl(null);
+    setError('');
+    setFarmerData(null);
+
     const loadFarmerData = async () => {
       try {
         setIsLoading(true);
         const data = await getFarmerData(farm.field_id);
         setFarmerData(data);
         
-        // Extract available sensed days
-        const dates = Object.keys(data.SensedDays || {}).sort().reverse();
+        // 'SensedDays' is not guaranteed in the API response for all farms.
+        // Fall back through known date sources in order of preference.
+        const rawData = data as any;
+        const dates = (
+          Object.keys(rawData.SensedDays || {}).length > 0
+            ? Object.keys(rawData.SensedDays)
+            : Object.keys(data.PreviousDataRequests || {}).length > 0
+              ? Object.keys(data.PreviousDataRequests)
+              : data.Health
+                ? Object.keys(Object.values(data.Health)[0] || {})
+                : []
+        ).sort().reverse();
+
         setAvailableDates(dates);
-        if (dates.length > 0 && !selectedDate) {
-          setSelectedDate(dates[0]); // Select most recent date
+        if (dates.length > 0) {
+          setSelectedDate(dates[0]); // Always use this farm's most recent date
         }
       } catch (err) {
         console.error('Error loading farmer data:', err);
@@ -379,12 +397,14 @@ const ColorizationMap: React.FC<ColorizationMapProps> = ({ farm, className = '' 
               <span className="text-white ml-2">{farm.field_id}</span>
             </div>
           </div>
-          {farmerData && (
+          {farmerData && farmerData.CenterLat != null && farmerData.CenterLong != null && (
             <div className="mt-3 pt-3 border-t border-zinc-700">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
                 <div>
                   <span className="text-zinc-500">Field Area:</span>
-                  <span className="text-white ml-2">{farmerData.FieldArea.toLocaleString()} sq.m</span>
+                  <span className="text-white ml-2">
+                    {farmerData.FieldArea != null ? farmerData.FieldArea.toLocaleString() : '—'} sq.m
+                  </span>
                 </div>
                 <div>
                   <span className="text-zinc-500">Center:</span>
@@ -394,7 +414,7 @@ const ColorizationMap: React.FC<ColorizationMapProps> = ({ farm, className = '' 
                 </div>
                 <div>
                   <span className="text-zinc-500">Status:</span>
-                  <span className="text-green-400 ml-2">{farmerData.Paid}</span>
+                  <span className="text-green-400 ml-2">{farmerData.Paid ?? '—'}</span>
                 </div>
               </div>
             </div>
