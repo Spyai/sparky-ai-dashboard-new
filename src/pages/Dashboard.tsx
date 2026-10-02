@@ -219,21 +219,18 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <>
-      {/* Add Farm Modal Overlay */}
-      {showAddFarm && (
-        <div className="fixed inset-0 z-50 bg-zinc-950/90 backdrop-blur-sm overflow-y-auto">
-          <FarmSetup
-            onComplete={handleFarmAdded}
-            onCancel={() => setShowAddFarm(false)}
-          />
-        </div>
-      )}
     <div className="flex h-screen overflow-hidden bg-zinc-950">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex flex-col flex-1 h-full lg:ml-64 overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
+          {showAddFarm ? (
+            /* ── Add Farm view – sidebar & header remain visible ── */
+            <FarmSetup
+              onComplete={handleFarmAdded}
+              onCancel={() => setShowAddFarm(false)}
+            />
+          ) : (
           <div className="mx-auto space-y-6 max-w-7xl">
             <div className="flex gap-4 flex-row items-center justify-between">
               <h1 className="text-2xl lg:text-3xl font-bold text-white">Farm Dashboard</h1>
@@ -418,6 +415,7 @@ const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
+          )}
         </main>
       </div>
       
@@ -451,7 +449,6 @@ const Dashboard: React.FC = () => {
         />
       </div>
     </div>
-    </>
   );
 };
 
