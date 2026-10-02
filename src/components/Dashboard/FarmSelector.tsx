@@ -33,7 +33,7 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 w-64 mt-2 border rounded-lg shadow-lg sm:left-0 top-full bg-zinc-800 border-zinc-700">
+        <div className="absolute right-0 z-50 w-56 sm:w-64 mt-2 border rounded-lg shadow-lg top-full bg-zinc-800 border-zinc-700">
           <div className="p-2">
             {farms.map((farm) => (
               <button

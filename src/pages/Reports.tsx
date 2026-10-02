@@ -788,11 +788,12 @@ const Reports: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-950">
+    <div className="flex h-screen overflow-hidden bg-zinc-950">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex flex-col flex-1 w-full min-w-0">
+      <div className="flex flex-col flex-1 h-full lg:ml-64 overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 p-4 overflow-y-auto sm:p-6">
+
           <div className="mx-auto space-y-4 sm:space-y-6 max-w-7xl">
             <div className="flex gap-4 flex-row items-center justify-between">
               <h1 className="text-2xl font-bold text-white sm:text-3xl">{t('Reports')}</h1>

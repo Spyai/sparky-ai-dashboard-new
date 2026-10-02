@@ -368,11 +368,12 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex">
+    <div className="flex h-screen overflow-hidden bg-zinc-950">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col w-full min-w-0">
+      <div className="flex-1 flex flex-col h-full lg:ml-64 overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 p-6 overflow-y-auto">
+
           <div className="max-w-4xl mx-auto space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-3xl font-bold text-white">{t('Settings')}</h1>

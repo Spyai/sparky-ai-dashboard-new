@@ -17,7 +17,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [openUserMenu, setOpenUserMenu] = useState(false);
 
   return (
-    <header className="flex items-center justify-between w-full h-16 px-4 border-b bg-zinc-900 border-zinc-800 sm:px-6">
+    <header className="sticky top-0 z-40 flex items-center justify-between w-full h-16 px-4 border-b bg-zinc-900 border-zinc-800 sm:px-6">
       <div className="flex items-center min-w-0 gap-2 sm:gap-4">
         {/* Mobile Menu Button */}
         <button
