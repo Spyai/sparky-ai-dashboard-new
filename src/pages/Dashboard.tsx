@@ -136,10 +136,20 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     if (selectedFarm?.field_id) {
+      // Reset stale data immediately so components don't render with previous farm's data
+      setFarmerData(null);
+      setWeatherData(null);
+      setFertilizerData(null);
+      setIrrigationData([]);
+      setYieldData(null);
+      setPestDiseaseData(null);
+      setWeedData(null);
+      // Start fresh fetches for the new farm
       fetchWeatherData(selectedFarm.field_id);
       fetchFarmerData(selectedFarm.field_id);
     }
-  }, [selectedFarm, fetchWeatherData, fetchFarmerData]);
+  }, [selectedFarm?.field_id, fetchWeatherData, fetchFarmerData]);
+
 
   // Fetch real-time AI data when farm data and weather data are available
   useEffect(() => {
@@ -219,9 +229,9 @@ const Dashboard: React.FC = () => {
           />
         </div>
       )}
-    <div className="flex min-h-screen bg-zinc-950">
+    <div className="flex h-screen overflow-hidden bg-zinc-950">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex flex-col flex-1 lg:ml-0">
+      <div className="flex flex-col flex-1 h-full lg:ml-64 overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
           <div className="mx-auto space-y-6 max-w-7xl">
