@@ -496,8 +496,29 @@ const Reports: React.FC = () => {
       default:
         return '<p>Report type not supported</p>';
     }
-  };  const renderReportContent = () => {
-    if (!reportData) return null;
+  };
+
+  // Formats YYYYMMDD API date strings → Indian format e.g. "26 Sep 2026"
+  const formatSensedDate = (raw: string): string => {
+    if (!raw || raw.length < 8) return raw || '—';
+    const year  = raw.substring(0, 4);
+    const month = raw.substring(4, 6);
+    const day   = raw.substring(6, 8);
+    const date  = new Date(`${year}-${month}-${day}`);
+    if (isNaN(date.getTime())) return raw;
+    return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  const renderReportContent = () => {
+    // Guard: show loader if no data OR if data is still from the previous report type
+    if (!reportData || reportData.type !== reportType) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-8 h-8 mb-3 border-2 border-blue-500 rounded-full border-t-transparent animate-spin" />
+          <p className="text-zinc-400">Generating report...</p>
+        </div>
+      );
+    }
 
     switch (reportType) {
       case 'crop-health':
@@ -514,7 +535,7 @@ const Reports: React.FC = () => {
               </div>
               <div className="p-4 rounded-lg bg-zinc-800 sm:col-span-2 lg:col-span-1">
                 <h4 className="mb-2 font-medium text-white">Last Updated</h4>
-                <p className="text-xl font-bold text-purple-400 sm:text-2xl">{reportData.lastUpdated}</p>
+                <p className="text-xl font-bold text-purple-400 sm:text-2xl">{formatSensedDate(reportData.lastUpdated)}</p>
               </div>
             </div>
 
@@ -639,7 +660,7 @@ const Reports: React.FC = () => {
               <div className="p-4 sm:p-6 rounded-lg bg-zinc-800">
                 <h4 className="mb-4 font-medium text-white">Status Breakdown</h4>
                 <div className="space-y-3">
-                  {reportData.statusData.map((status: { status: string; count: number }, index: number) => (
+                  {(reportData.statusData || []).map((status: { status: string; count: number }, index: number) => (
                     <div key={index} className="flex items-center justify-between">
                       <span className="text-zinc-300">{status.status}</span>
                       <div className="flex items-center gap-2">
@@ -713,15 +734,15 @@ const Reports: React.FC = () => {
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="p-4 rounded-lg bg-zinc-800">
                 <h4 className="mb-2 text-sm font-medium text-white sm:text-base">Total Income</h4>
-                <p className="text-xl sm:text-2xl font-bold text-green-400">₹{reportData.totalIncome.toLocaleString()}</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-400">₹{(reportData.totalIncome ?? 0).toLocaleString()}</p>
               </div>
               <div className="p-4 rounded-lg bg-zinc-800">
                 <h4 className="mb-2 text-sm font-medium text-white sm:text-base">Total Expenses</h4>
-                <p className="text-xl sm:text-2xl font-bold text-red-400">₹{reportData.totalExpenses.toLocaleString()}</p>
+                <p className="text-xl sm:text-2xl font-bold text-red-400">₹{(reportData.totalExpenses ?? 0).toLocaleString()}</p>
               </div>
               <div className="p-4 rounded-lg bg-zinc-800">
                 <h4 className="mb-2 text-sm font-medium text-white sm:text-base">Profit</h4>
-                <p className="text-xl sm:text-2xl font-bold text-blue-400">₹{reportData.profit.toLocaleString()}</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-400">₹{(reportData.profit ?? 0).toLocaleString()}</p>
               </div>
               <div className="p-4 rounded-lg bg-zinc-800">
                 <h4 className="mb-2 text-sm font-medium text-white sm:text-base">ROI</h4>
@@ -754,7 +775,7 @@ const Reports: React.FC = () => {
               <div className="p-4 sm:p-6 rounded-lg bg-zinc-800">
                 <h4 className="mb-4 font-medium text-white">Expense Breakdown</h4>
                 <div className="space-y-3">
-                  {reportData.expenses.map((expense: { category: string; amount: number; percentage: number }, index: number) => (
+                  {(reportData.expenses || []).map((expense: { category: string; amount: number; percentage: number }, index: number) => (
                     <div key={index} className="flex items-center justify-between">
                       <span className="text-zinc-300">{expense.category}</span>
                       <div className="flex items-center gap-2">
