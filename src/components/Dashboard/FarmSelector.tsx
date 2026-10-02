@@ -33,7 +33,7 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 w-64 mt-2 border rounded-lg shadow-lg sm:left-0 top-full bg-zinc-800 border-zinc-700">
+        <div className="absolute right-0 z-50 w-56 sm:w-64 mt-2 border rounded-lg shadow-lg top-full bg-zinc-800 border-zinc-700">
           <div className="p-2">
             {farms.map((farm) => (
               <button
@@ -56,12 +56,16 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({
           </div>
           <div className="p-2 border-t border-zinc-700">
             <button
-              onClick={() => alert(t('Upcoming feature: Add Farm'))}
-              className="flex items-center w-full gap-3 p-3 text-left text-green-500 transition-colors rounded-lg hover:bg-zinc-700"
+              onClick={() => {
+                onAddFarm();
+                setIsOpen(false);
+              }}
+              className="flex items-center w-full gap-3 p-3 text-left text-green-400 transition-colors rounded-lg hover:bg-zinc-700"
             >
-              <div>
-                Feature coming soon!
+              <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 bg-green-500/20 rounded-lg">
+                <Plus className="w-4 h-4 text-green-400" />
               </div>
+              <span className="font-medium">Add New Farm</span>
             </button>
           </div>
         </div>

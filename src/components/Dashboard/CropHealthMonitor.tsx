@@ -7,6 +7,25 @@ interface CropHealthMonitorProps {
 }
 
 const CropHealthMonitor: React.FC<CropHealthMonitorProps> = ({ data }) => {
+  // Guard: newly created farms have no satellite health data yet
+  if (!data?.Health) {
+    return (
+      <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-green-500/20 rounded-lg">
+            <Activity className="w-5 h-5 text-green-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-white">Crop Health Monitor</h3>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <AlertTriangle className="w-12 h-12 text-yellow-400 mb-3" />
+          <p className="text-zinc-300 font-medium mb-1">Satellite data not yet available</p>
+          <p className="text-zinc-500 text-sm">Health indices will appear here once the field has been sensed by satellite. This usually takes 1–3 days after farm creation.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Get the latest date from health data
   const latestDate = Object.keys(data.Health.ndvi || {})[0] || '';
   
@@ -147,7 +166,7 @@ const CropHealthMonitor: React.FC<CropHealthMonitorProps> = ({ data }) => {
           <div>
             <h3 className="text-xl font-semibold text-white">Crop Health Monitor</h3>
             <p className="text-zinc-400 text-sm">
-              Field Analysis • {formatDate(latestDate)} • {data.FieldArea.toLocaleString()} sq.m
+              Field Analysis • {formatDate(latestDate)} • {data.FieldArea?.toLocaleString?.() ?? '—'} sq.m
             </p>
           </div>
         </div>

@@ -28,6 +28,25 @@ interface AdvancedFieldAnalyticsProps {
 }
 
 const AdvancedFieldAnalytics: React.FC<AdvancedFieldAnalyticsProps> = ({ data }) => {
+  // Guard: newly created farms have no IndexBreakdown or Health data yet
+  if (!data?.IndexBreakdown || !data?.Health) {
+    return (
+      <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-blue-500/20 rounded-lg">
+            <BarChart3 className="w-5 h-5 text-blue-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-white">Advanced Field Analytics</h3>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Activity className="w-12 h-12 text-blue-400 mb-3" />
+          <p className="text-zinc-300 font-medium mb-1">Analytics data not yet available</p>
+          <p className="text-zinc-500 text-sm">Field analytics and index breakdowns will appear here once satellite sensing is complete. This usually takes 1–3 days after farm creation.</p>
+        </div>
+      </div>
+    );
+  }
+
   const latestDate = Object.keys(data.IndexBreakdown)[0] || '';
   const indexData = data.IndexBreakdown[latestDate] || {};
 
@@ -371,13 +390,13 @@ const AdvancedFieldAnalytics: React.FC<AdvancedFieldAnalyticsProps> = ({ data })
         </div>
         <div className="bg-zinc-800 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-purple-400">
-            {Object.keys(data.Coordinates).length}
+            {data.Coordinates ? Object.keys(data.Coordinates).length : '—'}
           </div>
           <div className="text-zinc-400 text-sm">Boundary Points</div>
         </div>
         <div className="bg-zinc-800 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-orange-400">
-            {data.hUnits}
+            {data.hUnits ?? '—'}
           </div>
           <div className="text-zinc-400 text-sm">Health Units</div>
         </div>

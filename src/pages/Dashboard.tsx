@@ -18,6 +18,7 @@ import { Farm } from '../types';
 import Sidebar from '../components/Layout/Sidebar';
 import Header from '../components/Layout/Header';
 import FarmSelector from '../components/Dashboard/FarmSelector';
+import FarmSetup from '../components/Farm/FarmSetup';
 import FertilizerInfo from '../components/Dashboard/FertilizerInfo';
 import IrrigationCalendar from '../components/Dashboard/IrrigationCalendar';
 import YieldEstimation from '../components/Dashboard/YieldEstimation';
@@ -41,6 +42,7 @@ const Dashboard: React.FC = () => {
   const [farmerDataLoading, setFarmerDataLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showAddFarm, setShowAddFarm] = useState(false);
 
   // Real-time AI data states
   const [fertilizerData, setFertilizerData] = useState<FertilizerRecommendation | null>(null);
@@ -134,10 +136,20 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     if (selectedFarm?.field_id) {
+      // Reset stale data immediately so components don't render with previous farm's data
+      setFarmerData(null);
+      setWeatherData(null);
+      setFertilizerData(null);
+      setIrrigationData([]);
+      setYieldData(null);
+      setPestDiseaseData(null);
+      setWeedData(null);
+      // Start fresh fetches for the new farm
       fetchWeatherData(selectedFarm.field_id);
       fetchFarmerData(selectedFarm.field_id);
     }
-  }, [selectedFarm, fetchWeatherData, fetchFarmerData]);
+  }, [selectedFarm?.field_id, fetchWeatherData, fetchFarmerData]);
+
 
   // Fetch real-time AI data when farm data and weather data are available
   useEffect(() => {
@@ -177,9 +189,26 @@ const Dashboard: React.FC = () => {
   }, [sidebarOpen]);
 
   const handleAddFarm = () => {
-    // Navigate to farm creation
-    window.location.href = '/farm-setup';
+    setShowAddFarm(true);
   };
+
+  const handleFarmAdded = useCallback(async () => {
+    setShowAddFarm(false);
+    // Re-fetch farms so the new farm appears in the list
+    if (!user?.phone) return;
+    try {
+      const { data, error } = await getUserFarms(user.phone);
+      if (error) throw error;
+      const updatedFarms = data || [];
+      setFarms(updatedFarms);
+      // Auto-select the newest farm (first in descending order)
+      if (updatedFarms.length > 0) {
+        setSelectedFarm(updatedFarms[0]);
+      }
+    } catch (error) {
+      console.error('Error refreshing farms after add:', error);
+    }
+  }, [user?.phone]);
 
   if (loading) {
     return (
@@ -190,11 +219,18 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-950">
+    <div className="flex h-screen overflow-hidden bg-zinc-950">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex flex-col flex-1 lg:ml-0">
+      <div className="flex flex-col flex-1 h-full lg:ml-64 overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
+          {showAddFarm ? (
+            /* ── Add Farm view – sidebar & header remain visible ── */
+            <FarmSetup
+              onComplete={handleFarmAdded}
+              onCancel={() => setShowAddFarm(false)}
+            />
+          ) : (
           <div className="mx-auto space-y-6 max-w-7xl">
             <div className="flex gap-4 flex-row items-center justify-between">
               <h1 className="text-2xl lg:text-3xl font-bold text-white">Farm Dashboard</h1>
@@ -379,6 +415,7 @@ const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
+          )}
         </main>
       </div>
       

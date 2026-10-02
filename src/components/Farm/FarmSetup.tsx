@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { MapPin, Plus, Save, AlertCircle } from 'lucide-react';
+import { MapPin, Plus, Save, AlertCircle, X } from 'lucide-react';
 import { createFarm } from '../../lib/supabase';
 import { submitField, getCropCode } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import MapBoundarySelector from './MapBoundarySelector';
 
-const FarmSetup: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+const FarmSetup: React.FC<{ onComplete: () => void; onCancel?: () => void }> = ({ onComplete, onCancel }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     farm_name: '',
@@ -18,7 +18,7 @@ const FarmSetup: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [error, setError] = useState('');
 
   const cropOptions = [
-    'Apple', 'Wheat', 'Rice', 'Corn', 'Soybean', 'Cotton', 'Tomato', 'Potato', 'Onion', 'Cabbage'
+    'Wheat', 'Rice', 'Corn', 'Sugarcane' , 'Soybean', 'Cotton', 'Tomato', 'Potato', 'Onion', 'Cabbage'
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,14 +92,23 @@ const FarmSetup: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 relative">
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="absolute right-0 top-0 p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              aria-label="Cancel"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
           <div className="inline-flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
               <Plus className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-white">Create Your Farm</h1>
+            <h1 className="text-3xl font-bold text-white">Add a Farm</h1>
           </div>
-          <p className="text-zinc-400">Let's set up your first farm to get started</p>
+          <p className="text-zinc-400">Set up your farm to start monitoring it on the dashboard</p>
         </div>
 
         <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">

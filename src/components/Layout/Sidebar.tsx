@@ -48,7 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <div 
         id="mobile-sidebar"
         className={`
-          fixed lg:static inset-y-0 left-0 z-50 flex flex-col w-64 h-screen 
+          fixed inset-y-0 left-0 z-50 flex flex-col w-64 h-screen 
           border-r bg-zinc-900 border-zinc-800 transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
         `}
