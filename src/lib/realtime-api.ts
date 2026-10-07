@@ -254,10 +254,16 @@ export const getAIYieldPrediction = async (
 ): Promise<YieldPrediction> => {
   try {
     const healthIndices = cropHealthData?.Health || {};
-    const latestNDVI = parseFloat(healthIndices.ndvi ? Object.values(healthIndices.ndvi)[0] as string : '0.5');
-    const latestLAI = parseFloat(healthIndices.lai ? Object.values(healthIndices.lai)[0] as string : '2.0');
-    
-    const sowingDate = new Date(cropHealthData?.SowingDate || '2024-01-01');
+    const rawNDVI = parseFloat(healthIndices.ndvi ? Object.values(healthIndices.ndvi)[0] as string : '0.5');
+    const rawLAI  = parseFloat(healthIndices.lai  ? Object.values(healthIndices.lai)[0]  as string : '2.0');
+    const latestNDVI = isNaN(rawNDVI) ? 0.5 : rawNDVI;
+    const latestLAI  = isNaN(rawLAI)  ? 2.0 : rawLAI;
+
+    // Guard against missing / invalid SowingDate — new Date(null) === Invalid Date
+    const rawSowingDate = new Date(cropHealthData?.SowingDate ?? '');
+    const sowingDate = isNaN(rawSowingDate.getTime())
+      ? new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)  // default: 60 days ago
+      : rawSowingDate;
     const daysSinceSowing = Math.floor((Date.now() - sowingDate.getTime()) / (1000 * 60 * 60 * 24));
     
     const aiPrompt = `

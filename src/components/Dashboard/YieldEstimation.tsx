@@ -59,12 +59,12 @@ const YieldEstimation: React.FC<YieldEstimationProps> = ({ crop, data }) => {
             <span className="text-zinc-300 font-medium">Expected Yield</span>
           </div>
           <p className="text-2xl font-bold text-white">
-            {data.expected_yield_per_acre.toLocaleString()}
+            {isNaN(data.expected_yield_per_acre) ? '—' : data.expected_yield_per_acre.toLocaleString()}
             <span className="text-sm text-zinc-400 ml-1">kg/acre</span>
           </p>
           <div className="flex items-center gap-1 mt-1">
-            <span className={`text-sm font-medium ${getConfidenceColor(data.yield_confidence)}`}>
-              {data.yield_confidence}% confidence
+            <span className={`text-sm font-medium ${getConfidenceColor(isNaN(data.yield_confidence) ? 0 : data.yield_confidence)}`}>
+              {isNaN(data.yield_confidence) ? '—' : data.yield_confidence}% confidence
             </span>
           </div>
         </div>
@@ -76,7 +76,7 @@ const YieldEstimation: React.FC<YieldEstimationProps> = ({ crop, data }) => {
           </div>
           <p className="text-xl font-bold text-white">{data.harvesting_period}</p>
           <p className="text-sm text-zinc-400 mt-1">
-            {data.growth_metrics.maturity_percentage}% mature
+            {isNaN(data.growth_metrics.maturity_percentage) ? '—' : `${data.growth_metrics.maturity_percentage}%`} mature
           </p>
         </div>
       </div>
@@ -88,7 +88,9 @@ const YieldEstimation: React.FC<YieldEstimationProps> = ({ crop, data }) => {
             <BarChart3 className="w-4 h-4 text-amber-400" />
             <span className="text-zinc-300 font-medium">Days Since Sowing</span>
           </div>
-          <p className="text-xl font-bold text-white">{data.growth_metrics.days_since_sowing}</p>
+          <p className="text-xl font-bold text-white">
+            {isNaN(data.growth_metrics.days_since_sowing) ? '—' : data.growth_metrics.days_since_sowing}
+          </p>
           <p className="text-sm text-zinc-400">days</p>
         </div>
 
@@ -107,11 +109,13 @@ const YieldEstimation: React.FC<YieldEstimationProps> = ({ crop, data }) => {
             <Target className="w-4 h-4 text-blue-400" />
             <span className="text-zinc-300 font-medium">Maturity</span>
           </div>
-          <p className="text-xl font-bold text-white">{data.growth_metrics.maturity_percentage}%</p>
+          <p className="text-xl font-bold text-white">
+            {isNaN(data.growth_metrics.maturity_percentage) ? '—' : `${data.growth_metrics.maturity_percentage}%`}
+          </p>
           <div className="w-full bg-zinc-700 rounded-full h-2 mt-2">
             <div 
               className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-              style={{ width: `${data.growth_metrics.maturity_percentage}%` }}
+              style={{ width: `${isNaN(data.growth_metrics.maturity_percentage) ? 0 : data.growth_metrics.maturity_percentage}%` }}
             ></div>
           </div>
         </div>
