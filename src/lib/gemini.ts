@@ -11,6 +11,40 @@ const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
 const RATE_LIMIT_DELAY = 2000; // 2 seconds between calls
 const MAX_DAILY_CALLS = 50; // Limit API calls per day
 
+let lastRequestTime = 0;
+let requestQueue: Promise<void> = Promise.resolve();
+
+const wait = (ms: number) =>
+  new Promise(resolve => setTimeout(resolve, ms));
+
+const runGeminiRequest = async <T>(
+  request: () => Promise<T>
+): Promise<T> => {
+  let result!: T;
+
+  const currentRequest = requestQueue.then(async () => {
+    const now = Date.now();
+    const elapsed = now - lastRequestTime;
+
+    if (elapsed < RATE_LIMIT_DELAY) {
+      await wait(RATE_LIMIT_DELAY - elapsed);
+    }
+
+    lastRequestTime = Date.now();
+
+    result = await request();
+  });
+
+  requestQueue = currentRequest.then(
+    () => undefined,
+    () => undefined
+  );
+
+  await currentRequest;
+
+  return result;
+};
+
 // In-memory cache for API responses
 interface CacheEntry {
   data: string;
@@ -65,20 +99,6 @@ class GeminiCache {
       timestamp: Date.now(),
       key
     });
-  }
-
-  // Rate limiting check
-  async checkRateLimit(): Promise<void> {
-    const now = Date.now();
-    const timeSinceLastCall = now - this.lastCallTime;
-    
-    if (timeSinceLastCall < RATE_LIMIT_DELAY) {
-      const waitTime = RATE_LIMIT_DELAY - timeSinceLastCall;
-      console.log(`⏳ Rate limiting: waiting ${waitTime}ms`);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
-    }
-    
-    this.lastCallTime = Date.now();
   }
 
   // Check if API call should be made
@@ -157,9 +177,6 @@ Monitor weather conditions and adjust irrigation accordingly.
 *For real-time insights, please check back tomorrow when API quota resets.*`;
     }
 
-    // Apply rate limiting
-    await geminiCache.checkRateLimit();
-
     const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
     const prompt = userQuery || `
@@ -192,7 +209,9 @@ Monitor weather conditions and adjust irrigation accordingly.
       Keep the response practical, actionable, and farmer-friendly.
     `;
 
-    const result = await model.generateContent(prompt);
+    const result = await runGeminiRequest(() =>
+      model.generateContent(prompt)
+    );
     const response = await result.response;
     const text = response.text();
     
@@ -250,9 +269,6 @@ Based on your question about "${message.substring(0, 50)}...", here are some gen
 *For personalized AI insights, please check back tomorrow when the API quota resets.*`;
     }
 
-    // Apply rate limiting
-    await geminiCache.checkRateLimit();
-
     const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
     const contextPrompt = `
@@ -273,7 +289,9 @@ Based on your question about "${message.substring(0, 50)}...", here are some gen
       Please provide a helpful, accurate, and practical response based on modern agricultural practices and the farm context provided. Keep responses concise but informative.
     `;
 
-    const result = await model.generateContent(contextPrompt);
+    const result = await runGeminiRequest(() =>
+      model.generateContent(contextPrompt)
+    );
     const response = await result.response;
     const text = response.text();
     
@@ -307,9 +325,6 @@ export const chatWithGeminiAdvanced = async (
       return await chatWithGemini(message, farmContext, conversationHistory);
     }
 
-    // Apply rate limiting
-    await geminiCache.checkRateLimit();
-
     const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
     // Start a chat session with limited history to reduce token usage
@@ -332,7 +347,9 @@ export const chatWithGeminiAdvanced = async (
       Question: ${message}
     `;
 
-    const result = await chat.sendMessage(contextualMessage);
+    const result = await runGeminiRequest(() =>
+      chat.sendMessage(contextualMessage)
+    );
     const response = await result.response;
     const text = response.text();
     
@@ -374,7 +391,9 @@ export const analyzeCropHealth = async (cropHealthData: any): Promise<string> =>
       Keep the response practical and actionable for farmers.
     `;
 
-    const result = await model.generateContent(prompt);
+    const result = await runGeminiRequest(() =>
+      model.generateContent(prompt)
+    );
     const response = await result.response;
     const text = response.text();
     
@@ -425,9 +444,6 @@ Based on recent weather analysis for your ${farmContext?.crop || 'crop'} field:
 *For current weather-specific advice, please check back tomorrow when API quota resets.*`;
     }
 
-    // Apply rate limiting
-    await geminiCache.checkRateLimit();
-
     const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
     const prompt = `
@@ -457,7 +473,7 @@ Based on recent weather analysis for your ${farmContext?.crop || 'crop'} field:
       Focus on actionable advice for the next 5 days.
     `;
 
-    const result = await model.generateContent(prompt);
+    const result = await runGeminiRequest(() => model.generateContent(prompt));
     const response = await result.response;
     const text = response.text();
     

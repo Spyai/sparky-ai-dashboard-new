@@ -24,7 +24,7 @@ import IrrigationCalendar from '../components/Dashboard/IrrigationCalendar';
 import YieldEstimation from '../components/Dashboard/YieldEstimation';
 import PestDiseaseOverview from '../components/Dashboard/PestDiseaseOverview';
 import WeedManagement from '../components/Dashboard/WeedManagement';
-import AIChat from '../components/Dashboard/AIChat';
+// import AIChat from '../components/Dashboard/AIChat';
 import FarmMap from '../components/Dashboard/FarmMap';
 import WeatherForecast from '../components/Dashboard/WeatherForecast';
 import CropHealthMonitor from '../components/Dashboard/CropHealthMonitor';
@@ -51,6 +51,7 @@ const Dashboard: React.FC = () => {
   const [pestDiseaseData, setPestDiseaseData] = useState<PestDiseaseData | null>(null);
   const [weedData, setWeedData] = useState<WeedManagementData | null>(null);
   const [aiDataLoading, setAiDataLoading] = useState(false);
+  const aiRequestKeyRef = React.useRef<string | null>(null);
 
   // Remove sample farm data - we'll use real-time AI data instead
 
@@ -100,29 +101,67 @@ const Dashboard: React.FC = () => {
 
   const fetchAIData = useCallback(async () => {
     if (!selectedFarm || !farmerData || !weatherData) return;
-    
+
+    const requestKey = `${selectedFarm.field_id}-${JSON.stringify({
+      weather: weatherData,
+      farmer: farmerData
+    })}`;
+
+    if (aiRequestKeyRef.current === requestKey) {
+      return;
+    }
+
+    aiRequestKeyRef.current = requestKey;
+
     setAiDataLoading(true);
+
     try {
-      // Fetch all AI-generated data in parallel
-      const [
-        fertilizerRecommendations,
-        irrigationSchedule, 
-        yieldPrediction,
-        pestDiseaseManagement,
-        weedManagement
-      ] = await Promise.all([
-        getAIFertilizerRecommendations(selectedFarm, farmerData, weatherData),
-        getAIIrrigationSchedule(selectedFarm, farmerData, weatherData),
-        getAIYieldPrediction(selectedFarm, farmerData, weatherData),
-        getAIPestDiseaseManagement(selectedFarm, farmerData, weatherData),
-        getAIWeedManagement(selectedFarm, farmerData, weatherData)
-      ]);
+
+      const fertilizerRecommendations =
+        await getAIFertilizerRecommendations(
+          selectedFarm,
+          farmerData,
+          weatherData
+        );
 
       setFertilizerData(fertilizerRecommendations);
+
+      const irrigationSchedule =
+        await getAIIrrigationSchedule(
+          selectedFarm,
+          farmerData,
+          weatherData
+        );
+
       setIrrigationData(irrigationSchedule);
+
+      const yieldPrediction =
+        await getAIYieldPrediction(
+          selectedFarm,
+          farmerData,
+          weatherData
+        );
+
       setYieldData(yieldPrediction);
+
+      const pestDiseaseManagement =
+        await getAIPestDiseaseManagement(
+          selectedFarm,
+          farmerData,
+          weatherData
+        );
+
       setPestDiseaseData(pestDiseaseManagement);
+
+      const weedManagement =
+        await getAIWeedManagement(
+          selectedFarm,
+          farmerData,
+          weatherData
+        );
+
       setWeedData(weedManagement);
+
     } catch (error) {
       console.error('Error fetching AI data:', error);
     } finally {
@@ -136,7 +175,10 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     if (selectedFarm?.field_id) {
-      // Reset stale data immediately so components don't render with previous farm's data
+      // Allow AI requests for the newly selected farm
+      aiRequestKeyRef.current = null;
+
+      // Reset stale data
       setFarmerData(null);
       setWeatherData(null);
       setFertilizerData(null);
@@ -144,12 +186,12 @@ const Dashboard: React.FC = () => {
       setYieldData(null);
       setPestDiseaseData(null);
       setWeedData(null);
-      // Start fresh fetches for the new farm
+
+      // Fetch fresh farm data
       fetchWeatherData(selectedFarm.field_id);
       fetchFarmerData(selectedFarm.field_id);
     }
   }, [selectedFarm?.field_id, fetchWeatherData, fetchFarmerData]);
-
 
   // Fetch real-time AI data when farm data and weather data are available
   useEffect(() => {
@@ -420,7 +462,7 @@ const Dashboard: React.FC = () => {
       </div>
       
       {/* AI Chat - Hidden on large screens, shown as floating on mobile/tablet */}
-      <div className="lg:hidden">
+      {/* <div className="lg:hidden">
         <AIChat 
           farmContext={{
             fieldId: selectedFarm?.field_id,
@@ -432,10 +474,10 @@ const Dashboard: React.FC = () => {
             lai: farmerData?.Health?.lai ? Object.values(farmerData.Health.lai)[0] as string : undefined,
           }}
         />
-      </div>
+      </div> */}
       
       {/* AI Chat - Shown as sidebar on large screens */}
-      <div className="hidden lg:block">
+      {/* <div className="hidden lg:block">
         <AIChat 
           farmContext={{
             fieldId: selectedFarm?.field_id,
@@ -447,7 +489,7 @@ const Dashboard: React.FC = () => {
             lai: farmerData?.Health?.lai ? Object.values(farmerData.Health.lai)[0] as string : undefined,
           }}
         />
-      </div>
+      </div> */}
     </div>
   );
 };
